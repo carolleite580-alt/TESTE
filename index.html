@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitar Teste | Plataforma EAD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos de Centralização */
+        body { margin: 0; font-family: Inter, sans-serif; background: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { max-width: 1100px; width: 100%; margin: auto; padding: 40px 20px; display: flex; gap: 40px; align-items: center; }
+        
+        /* Estilo das Caixas */
+        .left { flex: 1; }
+        .left h1 { font-size: 42px; color: #4b0055; line-height: 1.1; }
+        .left h1 span { color: #c000ff; }
+        
+        .form-box { flex: 1; background: #f9f9f9; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b0055; }
+        input, select, button { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        
+        button { background: #8b1fa9; color: #fff; border: none; font-weight: 700; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #6a1682; }
+
+        /* Lista de Busca */
+        .lista-parceiros { max-height: 160px; overflow-y: auto; background: #fff; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; display: none; }
+        .parceiro { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
+        .parceiro:hover { background: #f4e8f7; }
+
+        .success { display: none; color: #27ae60; font-weight: 600; text-align: center; padding: 20px; border: 2px dashed #27ae60; border-radius: 8px; }
+
+        @media (max-width: 850px) { .container { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="left">
+        <h1><span>Hospede, gerencie</span> e venda seus cursos</h1>
+        <p>Plataforma EAD completa para infoprodutores e empresas.</p>
+    </div>
+
+    <div class="form-box">
+        <div id="formContent">
+            <h2>Solicitar Demonstração</h2>
+            <form id="leadForm">
+                <label>Parceiro responsável</label>
+                <input type="text" id="buscaParceiro" placeholder="Digite o nome do parceiro..." autocomplete="off" required>
+                <div class="lista-parceiros" id="listaParceiros"></div>
+                <input type="hidden" name="parceiro" id="parceiroSelecionado">
+
+                <label>Seus dados</label>
+                <input type="text" name="nome" placeholder="Nome completo" required>
+                <input type="email" name="email" placeholder="Email principal" required>
+                <input type="tel" name="telefone" placeholder="WhatsApp com DDD" required>
+                
+                <label>Perfil</label>
+                <select name="perfil">
+                    <option value="Infoprodutor">Infoprodutor</option>
+                    <option value="Empresa">Empresa</option>
+                </select>
+
+                <button type="submit" id="btnEnviar">Concluir solicitação</button>
+            </form>
+        </div>
+
+        <div class="success" id="msgSuccess">
+            ✅ Dados enviados com sucesso!<br>Verifique sua planilha Google.
+        </div>
+    </div>
+</div>
+
+<script>
+    // Link que você gerou no Google Apps Script
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzQ9ZDq0N2KaXC0MC36-QjySoAKAQeXYWQ_kc_ou8-q_4oE3gR3RggR0pwyX0KvFYEa/exec";
+
+    // A lista de parceiros agora está ativa e pronta para a busca
+    const parceiros = [
+    { nome: "G9 INTELIGENCIA DE NEGOCIOS LTDA", cnpj: "75.039.228/0001-04", codigo: "750" },
+    { nome: "USINARIA EDUCACIONAL E CONSULTORIA", cnpj: "74.653.460/0001-93", codigo: "746" },
+    { nome: "CRESCERE TREINAMENTOS LTDA", cnpj: "74.545.586/0001-20", codigo: "745" },
+    { nome: "SETTI SISTEMAS LTDA", cnpj: "74.200.077/0001-33", codigo: "742" },
+    { nome: "HINT CONSULTORIA EMPRESARIAL LTDA", cnpj: "73.837.565/0001-42", codigo: "738" },
+    { nome: "FUTURO VM GLOBAL LTDA", cnpj: "73.655.757/0001-13", codigo: "736" },
+    { nome: "EVANDRO LUIS SILVA ME", cnpj: "73.540.835/0001-86", codigo: "735" },
+    { nome: "ROBERTO UENO CONSULTORIA", cnpj: "73.341.487/0001-28", codigo: "733" },
+    { nome: "CREARE PROJETOS LTDA", cnpj: "73.230.871/0001-12", codigo: "732" },
+    { nome: "LUX FABRICA DE CONTEÚDO", cnpj: "72.828.055/0001-30", codigo: "728" },
+    { nome: "DANIEL DE FARIAS GONZAGA", cnpj: "72.335.680/0001-04", codigo: "723" },
+    { nome: "LUAN VICTOR VIANA CARNEIRO", cnpj: "72.153.452/0001-50", codigo: "721" },
+    { nome: "ALIARE SOLUÇÕES EMPRESARIAIS LTDA", cnpj: "72.029.669/0001-58", codigo: "720" },
+    { nome: "HYGOR LORENCATO DA CONCEICAO", cnpj: "71.734.005/0001-09", codigo: "717" },
+    { nome: "KARINA TROVARELLI LTDA", cnpj: "71.138.368/0001-10", codigo: "711" },
+    { nome: "THIAGO S. FAUSTINO DA SILVA AGENCIA", cnpj: "71.049.443/0001-73", codigo: "710" },
+    { nome: "EW SOCIEDADE DE ENSINO LTDA", cnpj: "70.348.620/0001-51", codigo: "703" },
+    { nome: "SC ALMEIDA LTDA", cnpj: "70.215.832/0001-74", codigo: "702" },
+    { nome: "DANIEL MALTEZ PORTELLA", cnpj: "69.011.738/0001-87", codigo: "690" },
+    { nome: "DIGITAL MANAGER GURU", cnpj: "68.718.623/0001-60", codigo: "687" },
+    { nome: "CFC REPRESENTACOES COMERCIAIS", cnpj: "68.647.172/0001-75", codigo: "686" },
+    { nome: "INFORWARD RG SERVIÇOS DE INFORMÁTICA", cnpj: "68.109.054/0001-51", codigo: "681" },
+    { nome: "FERNANDA CIBELE FONSECA NORMANDIA", cnpj: "68.030.043/0001-84", codigo: "680" },
+    { nome: "JESSICA TERRA DOS SANTOS SILVA", cnpj: "67.817.257/0001-59", codigo: "678" },
+    { nome: "ASSOCIAÇÃO CONEXÃO VIVER SERVINDO", cnpj: "67.746.263/0001-60", codigo: "677" },
+    { nome: "ONOMA SISTEMAS DE GESTÃO LTDA", cnpj: "67.509.430/0001-02", codigo: "675" },
+    { nome: "AGENCIA ALAVANCA MARKETING ESTRATEGICO", cnpj: "67.350.580/0001-26", codigo: "673" },
+    { nome: "CONSULTORIA EMPRESARIAL COSTA & MACEDO", cnpj: "67.237.213/0001-14", codigo: "672" },
+    { nome: "VICTOR CONSULTORIA E ASSESSORIA EM TI", cnpj: "67.102.094/0001-83", codigo: "671" },
+    { nome: "SMP SISTEMAS LTDA", cnpj: "67.011.422/0001-30", codigo: "670" },
+    { nome: "RIBEIRO REPRESENTAÇÕES", cnpj: "66.948.300/0001-67", codigo: "669" },
+    { nome: "EASY MELHORES NEGÓCIOS", cnpj: "66.729.416/0001-22", codigo: "667" },
+    { nome: "MARKETING DIGITAL PROFESSOR EDILSON", cnpj: "66.412.690/0001-03", codigo: "664" },
+    { nome: "JAMES SANTOS PINHA", cnpj: "66.014.194/0001-09", codigo: "660" },
+    { nome: "PROAD DIGITAL LTDA", cnpj: "65.819.357/0001-27", codigo: "658" },
+    { nome: "MARCELO RODRIGO DOS SANTOS", cnpj: "65.445.543/0001-88", codigo: "654" },
+    { nome: "MATEUS VINÍCIUS MONTEIRO SILVA", cnpj: "65.353.314/0001-00", codigo: "653" },
+    { nome: "PRO42 EDITORA, CURSOS E TREINAMENTOS", cnpj: "65.246.471/0001-00", codigo: "652" },
+    { nome: "SPI SERVIÇOS DE PESQUISA, INFORMAÇÕES", cnpj: "64.908.613/0001-85", codigo: "649" },
+    { nome: "CONSULTORIA JS DATA COMPLIANCE LTDA", cnpj: "64.738.903/0001-91", codigo: "647" },
+    { nome: "JP RODRIGUES", cnpj: "64.513.502/0001-98", codigo: "645" },
+    { nome: "NEURON EDTECH", cnpj: "64.427.350/0001-69", codigo: "644" },
+    { nome: "MCP TREINAMENTOS", cnpj: "64.348.273/0001-74", codigo: "643" },
+    { nome: "TR TECNOLOGIAS EM INFORMÁTICA LTDA", cnpj: "64.227.159/0001-50", codigo: "642" },
+    { nome: "MARCELO JOSE BARBOSA RODRIGUES DE LIMA", cnpj: "64.018.871/0001-80", codigo: "640" },
+    { nome: "AMPLITUDE MARKETING DIGITAL LTDA", cnpj: "63.639.283/0001-34", codigo: "636" },
+    { nome: "33 DIGITAL MARKETING BRASIL LTDA", cnpj: "63.524.805/0001-38", codigo: "635" },
+    { nome: "DIEGO RODRIGO DOMICIO BORBA MARKETING", cnpj: "63.326.408/0001-83", codigo: "633" },
+    { nome: "QUEMAIS COMUNICACAO LTDA", cnpj: "63.007.600/0001-53", codigo: "630" },
+    { nome: "VOLTK TECNOLOGIA LTDA", cnpj: "62.548.906/0001-24", codigo: "625" },
+    { nome: "NOVIAPP MOBILE APPS LTDA", cnpj: "62.433.632/0001-23", codigo: "624" },
+    { nome: "ICARO HEBLING RIBEIRO", cnpj: "62.333.161/0001-57", codigo: "623" },
+    { nome: "COLECTA DIGITAL LTDA", cnpj: "62.117.988/0001-10", codigo: "621" },
+    { nome: "CADAVEICULO SISTEMAS LTDA", cnpj: "61.922.669/0001-53", codigo: "619" },
+    { nome: "AQUELA CAIXA SERVICOS DE ENSINO LTDA", cnpj: "61.840.949/0001-08", codigo: "618" },
+    { nome: "IR TECNOLOGIA E SOLUCOES EM TI EIRELI", cnpj: "61.528.480/0001-83", codigo: "615" },
+    { nome: "RAFAEL GIOVANI TEDESCHI", cnpj: "61.343.139/0001-89", codigo: "613" },
+    { nome: "EDUARDO RIBEIRO BENEZAR", cnpj: "61.121.751/0001-27", codigo: "611" },
+    { nome: "LAYS DA SILVA AMARO", cnpj: "61.025.233/0001-20", codigo: "610" },
+    { nome: "VAGNER FERNANDES DAVID", cnpj: "60.906.211/0001-76", codigo: "609" },
+    { nome: "JOSELITO BESSA DO SACRAMENTO", cnpj: "60.741.951/0001-15", codigo: "607" },
+    { nome: "GUILHERME RAMOS", cnpj: "60.643.919/0001-00", codigo: "606" },
+    { nome: "KAREN MICHELE SILVA LEITE", cnpj: "60.535.081/0001-24", codigo: "605" },
+    { nome: "F H CARDOSO SERVICO DE APOIO ADMINI", cnpj: "60.111.133/0001-40", codigo: "601" },
+    { nome: "L C DE PAULA CONCEICAO TREINAMENTO", cnpj: "60.022.737/0001-03", codigo: "600" },
+    { nome: "ESPAÇO FUNCIONA MENTE", cnpj: "59.948.571/0001-75", codigo: "599" },
+    { nome: "MARCELO RABELLO DESTRI", cnpj: "59.849.817/0001-43", codigo: "598" },
+    { nome: "EASY ADS DIGITAL LTDA", cnpj: "59.741.971/0001-50", codigo: "597" },
+    { nome: "FOCUS DIGITAL MEI", cnpj: "59.626.680/0001-15", codigo: "596" },
+    { nome: "D E DA SILVA CLICRADIO ME", cnpj: "59.517.579/0001-20", codigo: "595" },
+    { nome: "NOTAZZ GESTÃO FISCAL E LOGÍSTICA", cnpj: "59.319.600/0001-29", codigo: "593" },
+    { nome: "W. SOARES OLIVEIRA SPOLIDORO CONSUL", cnpj: "59.135.539/0001-51", codigo: "591" },
+    { nome: "INSTITUTO ALMA VIVA", cnpj: "59.046.833/0001-57", codigo: "590" },
+    { nome: "GRUPO N6X", cnpj: "58.947.430/0001-79", codigo: "589" },
+    { nome: "NOVO TEMPO CONSULTORIA E SOLUCOES LTDA", cnpj: "58.746.079/0001-01", codigo: "587" },
+    { nome: "SOTERIA SOLUCOES INTEGRADAS LTDA", cnpj: "58.651.316/0001-20", codigo: "586" },
+    { nome: "MLDC SERVICOS DE TREINAMENTO, CONTEUDO", cnpj: "58.526.030/0001-13", codigo: "585" },
+    { nome: "EUTTOPIA MARKETING PROMOCIONAL LTDA", cnpj: "58.420.092/0001-13", codigo: "584" },
+    { nome: "LUCIANO MENON", cnpj: "58.344.632/0001-08", codigo: "583" },
+    { nome: "INTELIGENCIAONLINE", cnpj: "58.212.836/0001-17", codigo: "582" },
+    { nome: "RHEIS CONSULTING", cnpj: "58.034.814/0001-02", codigo: "580" },
+    { nome: "LCG EDITOA EDUCAÇÃO PRODUÇÕES", cnpj: "57.916.753/0001-03", codigo: "579" },
+    { nome: "V4 COMPANY S.A.", cnpj: "57.716.961/0001-01", codigo: "577" },
+    { nome: "SCALEUP TECNOLOGIA LTDA", cnpj: "57.639.455/0001-90", codigo: "576" },
+    { nome: "RIBEIRO E JACINTO LTDA.", cnpj: "57.421.407/0001-03", codigo: "574" },
+    { nome: "ZENGOLANDIA SERVIÇOS GRÁFICOS", cnpj: "57.216.646/0001-52", codigo: "572" },
+    { nome: "MARIANA REGINA", cnpj: "57.039.151/0001-11", codigo: "570" },
+    { nome: "BÁRBARA SCARLETT DO CARMO FERREIRA", cnpj: "56.831.166/0001-53", codigo: "568" },
+    { nome: "AC SERVICOS E SOLUCOES DIGITAIS", cnpj: "56.636.683/0001-00", codigo: "566" },
+    { nome: "AUGUSTO CESAR FELIPE DA SILVA", cnpj: "56.547.514/0001-94", codigo: "565" },
+    { nome: "CLÍNICA PASSOS", cnpj: "56.140.510/0001-15", codigo: "561" },
+    { nome: "LK MIYASE NEGOCIOS DIGITAIS - LTDA", cnpj: "55.638.216/0001-34", codigo: "556" },
+    { nome: "VIA X CRIACOES E PRODUCOES LTDA", cnpj: "54.805.134/0001-83", codigo: "548" },
+    { nome: "SPES - SOCIEDADE PARAIBANA DE EDUCACAO", cnpj: "54.347.061/0001-47", codigo: "543" },
+    { nome: "JOSE OSVALDO MARTINS DA SILVA", cnpj: "53.839.690/0001-17", codigo: "538" },
+    { nome: "AP NUCCI COMERCIO E SERVICOS LTDA", cnpj: "53.624.450/0001-60", codigo: "536" },
+    { nome: "SCOPO NEGOCIOS EM CONSULTORIA", cnpj: "53.433.881/0001-07", codigo: "534" },
+    { nome: "CARLOS HELECYR COELHO FILHO ME", cnpj: "53.317.359/0001-24", codigo: "533" },
+    { nome: "RODOLFO PINHEIRO MORAIS IZIDORO", cnpj: "52.639.491/0001-39", codigo: "526" },
+    { nome: "LIGADO NA NET SOLUÇÕES DIGITAIS LTDA", cnpj: "52.540.178/0001-56", codigo: "525" },
+    { nome: "LLC TECNOLOGY DISTRIBUTION LTDA", cnpj: "52.425.132/0001-81", codigo: "524" },
+    { nome: "BERNARDO DA SILVA MOURTHÉ MATOSO", cnpj: "52.342.251/0001-68", codigo: "523" },
+    { nome: "CLICK CURSOS E CAPACITAÇÕES", cnpj: "51.547.926/0001-79", codigo: "515" },
+    { nome: "E.K ON", cnpj: "51.141.288/0001-60", codigo: "511" },
+    { nome: "RODSON LUZ SANTOS ME (REDEPOLO BRASIL)", cnpj: "51.022.542/0001-82", codigo: "510" },
+    { nome: "BOUTIQUE RH CONSULTORIA E TECNOLOGIA", cnpj: "50.528.025/0001-65", codigo: "505" },
+    { nome: "FESN - FEDERAÇÃO DOS ESTUDANTES", cnpj: "49.702.538/0001-00", codigo: "497" },
+    { nome: "MARÍLIA LUARA PJ", cnpj: "49.535.837/0001-30", codigo: "495" },
+    { nome: "DP PARTICIPACOES E SERVICOS LTDA", cnpj: "49.436.953/0001-87", codigo: "494" },
+    { nome: "CONSERVSOLAR", cnpj: "49.146.907/0001-61", codigo: "491" },
+    { nome: "COMMTECH TECNOLOGIAS DA COMUNICACAO", cnpj: "48.411.104/0001-23", codigo: "484" },
+    { nome: "JOSE JUSTINO DA SILVA FILHO", cnpj: "48.024.529/0001-21", codigo: "480" },
+    { nome: "VICTOR ANGELO DA SILVA MOTTA JR", cnpj: "47.845.064/0001-31", codigo: "478" },
+    { nome: "ND DIGITAL BUSINESS", cnpj: "47.735.518/0001-11", codigo: "477" },
+    { nome: "AGENCIA MMF", cnpj: "47.324.860/0001-41", codigo: "473" },
+    { nome: "EMERSON ROCA DE BRITO", cnpj: "47.222.927/0001-37", codigo: "472" },
+    { nome: "CEMED MEDICINA DIAGNÓSTICA LTDA", cnpj: "46.924.109/0001-25", codigo: "469" },
+    { nome: "PHR PRESTADORA DE SERVICOS FISICO E", cnpj: "46.847.102/0001-95", codigo: "468" },
+    { nome: "CENTRO NACIONAL DE QUALIFICACÃO PROF", cnpj: "46.509.598/0001-10", codigo: "465" },
+    { nome: "MILTON DO CARMO JUNIOR", cnpj: "46.438.096/0001-21", codigo: "464" },
+    { nome: "EVERSYS TECNOLOGIA E SERVICOS EM INF", cnpj: "46.007.098/0001-11", codigo: "460" },
+    { nome: "MARCELO DE MOURA PRADO", cnpj: "45.835.094/0001-88", codigo: "458" },
+    { nome: "MED CINE EDITORA E FILMAGENS LTDA", cnpj: "45.707.050/0001-50", codigo: "457" },
+    { nome: "ARCASOFT SERVICOS E COMERCIO DE INF", cnpj: "45.603.754/0001-52", codigo: "456" },
+    { nome: "COMERCIO LINGNER", cnpj: "45.547.339/0001-00", codigo: "455" },
+    { nome: "MD HEALTH SERVICOS MULTIDISCIPLINAR", cnpj: "45.327.182/0001-55", codigo: "453" },
+    { nome: "ADALBERTO ALVES DOS SANTOS", cnpj: "45.229.144/0001-62", codigo: "452" },
+    { nome: "AROEIRA CRIATIVA MARKETING", cnpj: "44.732.306/0001-97", codigo: "447" },
+    { nome: "VINÍCIUS XAVIER FOTOGRAFIA", cnpj: "44.645.606/0001-62", codigo: "446" },
+    { nome: "MARCELO FRANCINI", cnpj: "44.532.437/0001-04", codigo: "445" },
+    { nome: "FOFONKA PUBLICIDADE", cnpj: "44.418.100/0001-48", codigo: "444" },
+    { nome: "BRASIL INTERMEDIACAO E SERVICOS LTDA", cnpj: "44.341.450/0001-07", codigo: "443" },
+    { nome: "CIBELE CRISTINA DOS SANTOS", cnpj: "44.144.629/0001-42", codigo: "441" },
+    { nome: "RODRIGO DE SOUZA FOTI ME", cnpj: "43.718.463/0001-37", codigo: "437" },
+    { nome: "MARIA IRLANE DOS SANTOS NOBRE", cnpj: "43.441.815/0001-50", codigo: "434" },
+    { nome: "ALLAN LOPES TRASEL ME", cnpj: "43.115.444/0001-40", codigo: "431" },
+    { nome: "RENATA CORREA MARKETING DOGITAL", cnpj: "42.638.101/0001-40", codigo: "426" },
+    { nome: "MELIM IMPORTS", cnpj: "42.445.081/0001-59", codigo: "424" },
+    { nome: "RAMPER DESENVOLVIMENTO DE SOFTWARE", cnpj: "42.229.138/0001-74", codigo: "422" },
+    { nome: "THIAGO RODRIGO ALVES CARNEIRO", cnpj: "42.115.075/0001-78", codigo: "421" },
+    { nome: "LOOPMAIS TECNOLOGIA DIGITAL LTDA", cnpj: "42.041.685/0001-47", codigo: "420" },
+    { nome: "AGENCIA 3 PIXEL DESIGN E COMUNICACAO", cnpj: "41.845.543/0001-09", codigo: "418" },
+    { nome: "MDTECH DIGITAL", cnpj: "41.644.427/0001-78", codigo: "416" },
+    { nome: "MACROMETAS", cnpj: "41.004.998/0001-64", codigo: "410" },
+    { nome: "CM EDTECH EIRELI", cnpj: "40.818.370/0001-88", codigo: "408" },
+    { nome: "ALVES MARTINS ART", cnpj: "40.536.347/0001-40", codigo: "405" },
+    { nome: "VINICIUS P DIAMANTINO CURSOS", cnpj: "40.120.751/0001-32", codigo: "401" },
+    { nome: "EZEQUIEL ARCANJO DE CARVALHO ME", cnpj: "40.011.611/0001-02", codigo: "400" },
+    { nome: "WILSON DE CARVALHO JUNIOR TEC INF ME", cnpj: "39.524.943/0001-67", codigo: "395" },
+    { nome: "GABRIEL BONJORNO DINIZ", cnpj: "39.428.851/0001-29", codigo: "394" },
+    { nome: "MONICA DAVID FISCHER", cnpj: "39.345.322/0001-02", codigo: "393" },
+    { nome: "BEX TECNOLOGIA", cnpj: "39.230.075/0001-18", codigo: "392" },
+    { nome: "ILTON DA SILVA LIMA", cnpj: "39.123.499/0001-81", codigo: "391" },
+    { nome: "BARP DIGITAL E SAUDE LTDA", cnpj: "39.035.289/0001-00", codigo: "390" },
+    { nome: "LO ASSIS EIRELE", cnpj: "38.900.712/0001-31", codigo: "389" },
+    { nome: "MAURICIO CASSEMIRO DA CONCEICAO", cnpj: "38.818.973/0001-05", codigo: "388" },
+    { nome: "CARLOS VINICIUS SOUZA CARVALHO", cnpj: "38.711.245/0001-20", codigo: "387" },
+    { nome: "SP PROMOCAO E VENDAS", cnpj: "38.641.928/0001-82", codigo: "386" },
+    { nome: "M ROBERTO TENORIO DE SOUZA", cnpj: "38.411.878/0001-10", codigo: "384" },
+    { nome: "AGX TECNOLOGIA E MARKTING", cnpj: "38.316.998/0001-20", codigo: "383" },
+    { nome: "BADUK SOLUCOES FINANCEIRAS LTDA", cnpj: "38.237.319/0001-91", codigo: "382" },
+    { nome: "MARCELO DOS REIS CALDAS ME", cnpj: "37.927.404/0001-54", codigo: "379" },
+    { nome: "GRUPO URCOM TECNOLOGIA", cnpj: "37.826.678/0001-28", codigo: "378" },
+    { nome: "RTECNOLOGIA", cnpj: "37.742.041/0001-36", codigo: "377" },
+    { nome: "LIA SERVICOS LITERARIOS LYDA", cnpj: "37.629.904/0001-70", codigo: "376" },
+    { nome: "EDSON DA COSTA ALVES", cnpj: "37.330.223/0001-24", codigo: "373" },
+    { nome: "GILBERGSON MEIRELES MASCARENHAS", cnpj: "37.232.232/0001-47", codigo: "372" },
+    { nome: "ILHA ENTERPRISE CONSULTORIA E PUBLI", cnpj: "37.141.199/0001-95", codigo: "371" },
+    { nome: "VB MARKETING E WEBDESIGNER", cnpj: "36.937.438/0001-19", codigo: "369" },
+    { nome: "HIBRIDO NETWORK", cnpj: "36.835.671/0001-41", codigo: "368" },
+    { nome: "INSTITUTO CARREIRA E SAUDE", cnpj: "36.734.384/0001-91", codigo: "367" },
+    { nome: "CUPONOMIA DIVULGACAO VIRTUAL LTDA", cnpj: "36.612.648/0001-71", codigo: "366" },
+    { nome: "46DIGITAL EIRELI", cnpj: "36.528.470/0001-62", codigo: "365" },
+    { nome: "ELIEL MENDONCA PIMENTA", cnpj: "36.413.103/0001-56", codigo: "364" },
+    { nome: "PW BRANDS SERVICOS DE MIDIA LTDA", cnpj: "36.219.994/0001-55", codigo: "362" },
+    { nome: "SEDIG SERVIÇOS DIGITAIS LTDA.", cnpj: "36.008.902/0001-50", codigo: "360" },
+    { nome: "ROGERIO RICARDO PEREIRA TEIXEIRA", cnpj: "35.820.247/0001-30", codigo: "358" },
+    { nome: "MORS3 CONTEUDOS DIGITAIS E MARKETPL", cnpj: "35.742.421/0001-16", codigo: "357" },
+    { nome: "ROSETA E ALONSO COMUNICACAO E MARKE", cnpj: "35.610.385/0001-01", codigo: "356" },
+    { nome: "PLAY TEC SOLUCOES EM IINFORMATICA M", cnpj: "35.417.634/0001-70", codigo: "354" },
+    { nome: "TREE TOOLS INFORMATICA LTDA", cnpj: "35.382.428/0001-80", codigo: "353" },
+    { nome: "PARLAMENTO COMUNICACAO LTDA", cnpj: "35.232.274/0001-90", codigo: "352" },
+    { nome: "PERSEUS TECNOLOGIA DA INFORMACAO SA", cnpj: "35.102.679/0001-66", codigo: "351" },
+    { nome: "GD COMUNICACOES E SOLUCOES MULTIMID", cnpj: "35.013.799/0001-10", codigo: "350" },
+    { nome: "BRUNO ISAIAS DE SOUZA BARROS MEI", cnpj: "34.924.994/0001-28", codigo: "349" },
+    { nome: "MICHELE SERPA GUILHERMINO", cnpj: "34.838.334/0001-08", codigo: "348" },
+    { nome: "ESPELL ENGENHARIA DE SISTEMAS ELETR", cnpj: "34.709.201/0001-56", codigo: "347" },
+    { nome: "PROSEG PREVENCAO E ORIENTACAO NA SE", cnpj: "34.618.285/0001-64", codigo: "346" },
+    { nome: "E GOI DIGITAL BRASIL LTDA", cnpj: "34.532.258/0001-33", codigo: "345" },
+    { nome: "WS INTELIGENCIA", cnpj: "34.436.805/0001-06", codigo: "344" },
+    { nome: "ALFA TRAINER", cnpj: "34.335.051/0001-12", codigo: "343" },
+    { nome: "MARIA LENITA GOMES SOARES", cnpj: "34.242.779/0001-47", codigo: "342" },
+    { nome: "OILUTEG TREINAMENTOS", cnpj: "34.137.634/0001-88", codigo: "341" },
+    { nome: "GALATA TECNOLOGIA LTDA", cnpj: "34.026.735/0001-03", codigo: "340" },
+    { nome: "AME DIGITAL BRASIL LTDA", cnpj: "33.932.778/0001-70", codigo: "339" },
+    { nome: "CONTA SIMPLES SOLUCOES DE PAGAMENTO", cnpj: "33.832.273/0001-84", codigo: "338" },
+    { nome: "LEARNEX ACADEMY", cnpj: "33.642.073/0001-80", codigo: "336" },
+    { nome: "RAMOS SOARES E PINHEIRO DESENVOLVIM", cnpj: "33.521.496/0001-85", codigo: "335" },
+    { nome: "JMDIGITAL", cnpj: "33.337.763/0001-52", codigo: "333" },
+    { nome: "SIGA PRODUTORA DE EVENTOS LTDA", cnpj: "33.211.397/0001-36", codigo: "332" },
+    { nome: "JD INFORMATICA E COMUNICACAO EIRELI", cnpj: "33.126.702/0001-45", codigo: "331" },
+    { nome: "INOVE TECNOLOGIA DA INFORMACAO E SE", cnpj: "33.028.149/0001-98", codigo: "330" },
+    { nome: "TSI BRASIL TECNOLOGIA", cnpj: "32.902.075/0001-61", codigo: "329" },
+    { nome: "UNID DE PROD DIG E WEB DES", cnpj: "32.810.798/0001-33", codigo: "328" },
+    { nome: "SQUINZANI E SQUINZANI", cnpj: "32.727.486/0001-02", codigo: "327" },
+    { nome: "WILSON ROBERTO REGO ARAUJO", cnpj: "32.538.022/0001-20", codigo: "325" },
+    { nome: "SAIA LAPIS COM TENIS TREINAMENTOS", cnpj: "32.437.552/0001-45", codigo: "324" },
+    { nome: "SANSONE E SANSONE INF LTDA ME", cnpj: "32.317.805/0001-16", codigo: "323" },
+    { nome: "FORGOV COMERCIO SERVICOS E REPRESEN", cnpj: "32.204.738/0001-37", codigo: "322" },
+    { nome: "ISMAEL FRANCA", cnpj: "32.136.977/0001-48", codigo: "321" },
+    { nome: "A ATOFFETTI CONSULTORIA EMPRESARIAL", cnpj: "31.841.266/0001-79", codigo: "318" },
+    { nome: "MBS DE CARVALHO MARKETING DIGITAL", cnpj: "31.723.882/0001-30", codigo: "317" },
+    { nome: "TUAPP TECNOLOGIA", cnpj: "31.641.150/0001-03", codigo: "316" },
+    { nome: "ROSANA IZUMI KASSAMATSU", cnpj: "31.519.005/0001-33", codigo: "315" },
+    { nome: "PRODUSOFT ASSESSORIA E SERVICOS", cnpj: "31.453.812/0001-07", codigo: "314" },
+    { nome: "R2D2 AGENCY", cnpj: "31.118.839/0001-80", codigo: "311" },
+    { nome: "BIRIBATECH CONSULTORIA E SERVICOS", cnpj: "31.041.548/0001-70", codigo: "310" },
+    { nome: "GG COMUNICACAO E MARKETING", cnpj: "30.826.617/0001-56", codigo: "308" },
+    { nome: "HOWEB SERVICOS DIGITAIS", cnpj: "30.726.053/0001-50", codigo: "307" },
+    { nome: "J T L HAMMERLE WEB DESIGN LTDA", cnpj: "30.540.795/0001-02", codigo: "305" },
+    { nome: "LUIS TOSHIYAKI MATSUMOTO", cnpj: "30.430.076/0001-45", codigo: "304" },
+    { nome: "NEXT LEVEL", cnpj: "30.314.150/0001-41", codigo: "303" },
+    { nome: "ISABEL SERRA", cnpj: "30.139.685/0001-79", codigo: "301" },
+    { nome: "ENDERSON CARLOS NASCIMENTO SOARES", cnpj: "30.036.628/0001-14", codigo: "300" },
+    { nome: "G K MORAIS ENSINO PROFISSIONALIZANT", cnpj: "29.926.585/0001-76", codigo: "299" },
+    { nome: "TIAGO NOVAES DOS SANTOS LTDA", cnpj: "29.630.089/0001-45", codigo: "296" },
+    { nome: "ZUM SERVICOS DE PUBLICIDADE LTDA.", cnpj: "29.405.254/0001-56", codigo: "294" },
+    { nome: "FRANCO COMUNICACAO", cnpj: "29.300.447/0001-04", codigo: "293" },
+    { nome: "GENEGOCIOS - GESTAO DE NEGOCIOS", cnpj: "29.229.687/0001-37", codigo: "292" },
+    { nome: "G2MIX", cnpj: "29.106.043/0001-44", codigo: "291" },
+    { nome: "LUIS LEME MARKETING E DESENVOLVIMEN", cnpj: "29.028.924/0001-57", codigo: "290" },
+    { nome: "BR CURSOS DA SAUDE", cnpj: "28.929.655/0001-48", codigo: "289" },
+    { nome: "GUILHERME SENA FULGENCIO", cnpj: "28.834.984/0001-19", codigo: "288" },
+    { nome: "CEFI CURSOS COM DE LIVROS EIRELI", cnpj: "28.732.325/0001-08", codigo: "287" },
+    { nome: "TIAGO SIMONINI SILVA", cnpj: "28.618.032/0001-00", codigo: "286" },
+    { nome: "SITE BOM E BARATO", cnpj: "28.530.118/0001-10", codigo: "285" },
+    { nome: "PHELIPE ARAUJO COELHO", cnpj: "28.323.984/0001-40", codigo: "283" },
+    { nome: "PROVI SOLUCOES E SERVICOS LTDA", cnpj: "28.232.390/0001-92", codigo: "282" },
+    { nome: "ANTONIO RICARDO DA SILVA RAMOS", cnpj: "28.124.702/0001-58", codigo: "281" },
+    { nome: "LUCAS GOMES RAMOS", cnpj: "27.937.389/0001-56", codigo: "279" },
+    { nome: "HPT-HIGH PERFORMANCE TRAINING LTDA", cnpj: "27.832.076/0001-55", codigo: "278" },
+    { nome: "MARIO JOSE MION", cnpj: "27.709.139/0001-80", codigo: "277" },
+    { nome: "JUAN LACERDA SATURNINO", cnpj: "27.612.533/0001-54", codigo: "276" },
+    { nome: "RAFAEL D", cnpj: "27.523.644/0001-15", codigo: "275" },
+    { nome: "JUMP BUSINESS", cnpj: "27.335.137/0001-32", codigo: "273" },
+    { nome: "DJS SOLUCÕES EMPRESARIAIS", cnpj: "27.238.200/0001-34", codigo: "272" },
+    { nome: "MARCELINO TEIXEIRA SANTOS", cnpj: "26.728.115/0001-27", codigo: "267" },
+    { nome: "FREDSON DEMASTER", cnpj: "26.639.580/0001-58", codigo: "266" },
+    { nome: "LACO DIGITAL LTDA", cnpj: "26.526.967/0001-12", codigo: "265" },
+    { nome: "INTEGRAL ASSESSORIA E COMÉRCIO", cnpj: "26.336.783/0001-07", codigo: "263" },
+    { nome: "MARCELO CARVALHO SOUSA", cnpj: "26.019.835/0001-36", codigo: "260" },
+    { nome: "MADE4TEC", cnpj: "25.917.936/0001-01", codigo: "259" },
+    { nome: "IVAN REPRESENTACAO DIGITAL", cnpj: "25.824.831/0001-40", codigo: "258" },
+    { nome: "STAGE3 SOLUCOES DIGITAIS", cnpj: "25.605.535/0001-54", codigo: "256" },
+    { nome: "VINICIUS DE CARVALHO GODOY", cnpj: "25.439.402/0001-05", codigo: "254" },
+    { nome: "RG VIEIRA AGENCIAMENTO DE SERVICOS", cnpj: "25.314.934/0001-03", codigo: "253" },
+    { nome: "NALRIG NEWS, TREINAMENTOS E SERVIÇ", cnpj: "25.217.601/0001-60", codigo: "252" },
+    { nome: "HITALO MARTIN GEIGER LTDA", cnpj: "25.138.925/0001-04", codigo: "251" },
+    { nome: "ADEMIR QUIRINO DE SA JUNIOR", cnpj: "25.014.031/0001-32", codigo: "250" },
+    { nome: "IMS", cnpj: "24.911.975/0001-41", codigo: "249" },
+    { nome: "CASA DE CURSOS BRASIL", cnpj: "24.839.820/0001-19", codigo: "248" },
+    { nome: "SARA ALVES MACEDO", cnpj: "24.734.112/0001-02", codigo: "247" },
+    { nome: "NEUSA CRISTINA GONCALVES SILVA MEI", cnpj: "24.633.303/0001-06", codigo: "246" },
+    { nome: "GBVENDAS", cnpj: "24.531.595/0001-29", codigo: "245" },
+    { nome: "MARIA IZABEL ANTONIO", cnpj: "24.421.992/0001-40", codigo: "244" },
+    { nome: "YOUSE CURSOS E IDIOMAS LTDA ME", cnpj: "24.328.870/0001-40", codigo: "243" },
+    { nome: "SINSEP", cnpj: "24.205.985/0001-44", codigo: "242" },
+    { nome: "A&G SERVICOS E TELECOM", cnpj: "24.137.919/0001-51", codigo: "241" },
+    { nome: "INNER TREINAMENTO PROFISSIOAL", cnpj: "24.032.966/0001-78", codigo: "240" },
+    { nome: "ANDRE LUIZ MARTINS DE ALMEIDA", cnpj: "23.931.552/0001-34", codigo: "239" },
+    { nome: "JOÃO GIOVANNE DE OLIVEIRA BRAGA", cnpj: "23.838.035/0001-60", codigo: "238" },
+    { nome: "RAFAEL CARDOSO ALVES DOS SANTOS", cnpj: "23.722.843/0001-03", codigo: "237" },
+    { nome: "JOSE ORLEIR A PEIXOTO FOTOGRAFIAS ME", cnpj: "23.637.280/0001-20", codigo: "236" },
+    { nome: "GABRIEL VITOR RODRIGUES DOS SANTOS", cnpj: "23.538.041/0001-62", codigo: "235" },
+    { nome: "JFB ASSOCIADOS LTDA", cnpj: "23.425.277/0001-24", codigo: "234" },
+    { nome: "DRR AULAS ONLINE", cnpj: "23.332.533/0001-50", codigo: "233" },
+    { nome: "KATIA CILENE GRAVACOES", cnpj: "23.224.577/0001-89", codigo: "232" },
+    { nome: "TOPCURSO", cnpj: "23.124.976/0001-53", codigo: "231" },
+    { nome: "JOSUE GOMES DA SILVA", cnpj: "23.011.744/0001-97", codigo: "230" },
+    { nome: "MICHEL REPRESENTACOES LTDA", cnpj: "22.935.617/0001-59", codigo: "229" },
+    { nome: "PEDRO GERARD DE SOUZA JUCA", cnpj: "22.837.635/0001-47", codigo: "228" },
+    { nome: "BERNARDO CARAMEZ FERREIRA", cnpj: "22.738.364/0001-70", codigo: "227" },
+    { nome: "INSTITUTO DA TRANSFORMACAO DIGITAL", cnpj: "22.630.107/0001-76", codigo: "226" },
+    { nome: "AFIRMA CONSULTORIA", cnpj: "22.512.584/0001-21", codigo: "225" },
+    { nome: "VIVANTE GESTAO E ADMINISTRACAO JUDI", cnpj: "22.422.122/0001-26", codigo: "224" },
+    { nome: "FRANCISCO MIRANDA DA SILVA", cnpj: "22.331.843/0001-16", codigo: "223" },
+    { nome: "INTERWEB E BUSINESS SERVICOS", cnpj: "22.205.137/0001-40", codigo: "222" },
+    { nome: "GRUPO MS ASSESSORIA", cnpj: "22.135.418/0001-12", codigo: "221" },
+    { nome: "TENDENZA TECNOLOGIA DA INFORMACAO LTDA", cnpj: "22.015.123/0001-88", codigo: "220" },
+    { nome: "CASA BRASIL COMUNICACAO", cnpj: "21.908.050/0001-09", codigo: "219" },
+    { nome: "ALEXANDER NEVES NUNES", cnpj: "21.727.404/0001-16", codigo: "217" },
+    { nome: "SERVICOS, COMERCIO E REPRESENTACAO", cnpj: "21.639.062/0001-91", codigo: "216" },
+    { nome: "CALENGURU MARKETING E PUBLICIDADE E", cnpj: "21.539.339/0001-07", codigo: "215" },
+    { nome: "SUENIA KERCIA DOS SANTOS SALES", cnpj: "21.431.096/0001-96", codigo: "214" },
+    { nome: "NINA ROBERTA RIOS ALMEIDA", cnpj: "21.330.292/0001-61", codigo: "213" },
+    { nome: "EDSON PINTO DE MELLO", cnpj: "21.237.551/0001-04", codigo: "212" },
+    { nome: "MARCELA GOMIDE FERREIRA ME", cnpj: "21.118.058/0001-63", codigo: "211" },
+    { nome: "OTTO COMUNICACAO LTDA", cnpj: "21.023.341/0001-82", codigo: "210" },
+    { nome: "SUCCESS PEOPLE DESENVOLVIMENTO PROF", cnpj: "20.928.155/0001-08", codigo: "209" },
+    { nome: "SANTOS PIMENTEL E PIMENTEL LTDA", cnpj: "20.808.633/0001-34", codigo: "208" },
+    { nome: "ESTUDIO TREGIER DE INTERATIVIDADE LTDA", cnpj: "20.702.743/0001-57", codigo: "207" },
+    { nome: "RAPHAEL ALVES DA SILVA", cnpj: "20.624.676/0001-60", codigo: "206" },
+    { nome: "ERRADICANDO O DISPERDICIOS DE POTEN", cnpj: "20.530.919/0001-35", codigo: "205" },
+    { nome: "JS PROJETOS DESENVOLVIMENTO WEB", cnpj: "20.418.952/0001-67", codigo: "204" },
+    { nome: "B16 AGENCIA DE MARKETING LTDA", cnpj: "20.224.496/0001-43", codigo: "202" },
+    { nome: "ROGERIO DINIZ MARTINS", cnpj: "20.115.394/0001-40", codigo: "201" },
+    { nome: "ESTUDIO MD3", cnpj: "19.832.256/0001-75", codigo: "198" },
+    { nome: "93 MIDIA LTDA - EPP", cnpj: "19.728.472/0001-44", codigo: "197" },
+    { nome: "STUDIO PORTAL PRODUCOES", cnpj: "19.606.949/0001-03", codigo: "196" },
+    { nome: "MK3", cnpj: "19.504.990/0001-18", codigo: "195" },
+    { nome: "REGINALDO MANRIQUE PALMA ME", cnpj: "19.421.157/0001-64", codigo: "194" },
+    { nome: "FABIANA RODRIGUES SIQUEIRA", cnpj: "19.321.291/0001-68", codigo: "193" },
+    { nome: "VIRTUAINFO SITES E HOSPEDAGEM", cnpj: "19.202.564/0001-55", codigo: "192" },
+    { nome: "AGENCIA SPARK", cnpj: "19.132.285/0001-54", codigo: "191" },
+    { nome: "QUALITY SERVICE INSTALACOES", cnpj: "18.914.222/0001-17", codigo: "189" },
+    { nome: "INKOUST CONSULTORIA E AGENCIA DE MA", cnpj: "18.829.702/0001-63", codigo: "188" },
+    { nome: "THORGET MARKETING", cnpj: "18.627.913/0001-71", codigo: "186" },
+    { nome: "FELIPE EDUARDO PIRES", cnpj: "18.531.515/0001-01", codigo: "185" },
+    { nome: "WALLISON BATISTA DUTRA", cnpj: "18.432.190/0001-28", codigo: "184" },
+    { nome: "LUIS ALEXANDRE ALVES DE MORAES", cnpj: "18.308.934/0001-11", codigo: "183" },
+    { nome: "CRAYON MULTIMEDIA LTDA", cnpj: "18.215.833/0001-45", codigo: "182" },
+    { nome: "ANA DANIELA FERREIRA DE MELO", cnpj: "18.022.048/0001-80", codigo: "180" },
+    { nome: "COLORS ART E DESIGN LTDA", cnpj: "17.904.186/0001-60", codigo: "179" },
+    { nome: "MERCAVEJO MARKETING DIRETO", cnpj: "17.818.280/0001-00", codigo: "178" },
+    { nome: "JONATAS CASTRO DOS ANJOS", cnpj: "17.735.583/0001-92", codigo: "177" },
+    { nome: "JANUS TREINAMENTO E CONSULTORIA TEC", cnpj: "17.619.890/0001-25", codigo: "176" },
+    { nome: "MARCIO ALMEIDA ZOCATELLI", cnpj: "17.530.871/0001-12", codigo: "175" },
+    { nome: "HEALTH SYSTEM INFORMATICA COMERCIO", cnpj: "17.407.803/0001-04", codigo: "174" },
+    { nome: "AGENCIA R8 MARKETING DIGITAL", cnpj: "17.317.413/0001-74", codigo: "173" },
+    { nome: "1001 SERVICOS DIGITAIS EIRELI ME", cnpj: "17.223.525/0001-87", codigo: "172" },
+    { nome: "RENAN AUGUSTO DA SILVA MISSE", cnpj: "17.129.990/0001-26", codigo: "171" },
+    { nome: "SINCTEC SISTEMAS BRASIL LTDA", cnpj: "17.018.099/0001-21", codigo: "170" },
+    { nome: "PALOMBA TECNOLOGIA DA INFORMACAO", cnpj: "16.819.957/0001-39", codigo: "168" },
+    { nome: "CRIWEB TECNOLOGIA LTDA", cnpj: "16.710.981/0001-27", codigo: "167" },
+    { nome: "SCIENTIARE ATIVIDADES DE INTERNET", cnpj: "16.618.996/0001-09", codigo: "166" },
+    { nome: "LAERCIO GONSALVES PEREIRA", cnpj: "16.513.814/0001-20", codigo: "165" },
+    { nome: "MAYER & MARCOLINO INFORMATICA LTDA", cnpj: "16.410.831/0001-76", codigo: "164" },
+    { nome: "RAFAELA VIEIRA DE SOUZA SERRA", cnpj: "16.311.105/0001-34", codigo: "163" },
+    { nome: "IZAEU MENEZES VIEIRA", cnpj: "16.230.603/0001-91", codigo: "162" },
+    { nome: "BLOSSOM BRASIL", cnpj: "16.133.687/0001-03", codigo: "161" },
+    { nome: "ALPHA INSTITUTO EDUCACIONAL", cnpj: "16.009.357/0001-16", codigo: "160" },
+    { nome: "KLINGER GONCALVES MENESES JUNIOR", cnpj: "15.921.181/0001-50", codigo: "159" },
+    { nome: "SERGIO FA SERV TELECOM ME", cnpj: "15.725.183/0001-36", codigo: "157" },
+    { nome: "JBM AGENCIA DE MARKETING DIGITAL LTDA", cnpj: "15.623.537/0001-01", codigo: "156" },
+    { nome: "WASHINGTON LUIS JULIANI", cnpj: "15.524.558/0001-97", codigo: "155" },
+    { nome: "ASA SOFTWARE LTDA", cnpj: "15.432.873/0001-73", codigo: "154" },
+    { nome: "CG CONSULTORIA GERENCIAL", cnpj: "15.209.343/0001-33", codigo: "152" },
+    { nome: "INSTITUTO EDUCACIONAL E TECNOLOGICO", cnpj: "14.913.770/0001-08", codigo: "149" },
+    { nome: "AX CURSOS E TREINAMENTOS EIRELI", cnpj: "14.826.628/0001-69", codigo: "148" },
+    { nome: "INSTITUTO DE PESQUISA, GESTAO E ADM", cnpj: "14.711.425/0001-99", codigo: "147" },
+    { nome: "LEANIO ROBSON DE ALMEIDA SAFARIDIGI", cnpj: "14.628.353/0001-43", codigo: "146" },
+    { nome: "CRESCIMENTO DIGITAL", cnpj: "14.514.869/0001-20", codigo: "145" },
+    { nome: "USS TRAVEL", cnpj: "14.417.764/0001-81", codigo: "144" },
+    { nome: "GABRIEL FERREIRA PACHECO", cnpj: "14.327.844/0001-50", codigo: "143" },
+    { nome: "GESCON TECNOLOGIA E TREINAMENTOS", cnpj: "14.220.854/0001-79", codigo: "142" },
+    { nome: "STUDIOS ONE", cnpj: "14.031.794/0001-05", codigo: "140" },
+    { nome: "DATAPLAN CONSULTORIA - CURSOS AMBIE", cnpj: "13.927.653/0001-81", codigo: "139" },
+    { nome: "PROGRAMADOR DIGITAL SOLUCOES EM TI", cnpj: "13.810.951/0001-79", codigo: "138" },
+    { nome: "KOACH PARTNER CONSULTORIA LTDA", cnpj: "13.711.073/0001-09", codigo: "137" },
+    { nome: "MARCELO BEZERRA DE SOUZA", cnpj: "13.527.670/0001-34", codigo: "135" },
+    { nome: "BOOKNANDO LIVROS", cnpj: "13.420.167/0001-16", codigo: "134" },
+    { nome: "ALAN MICHEL SILVA DOS SANTOS", cnpj: "13.332.599/0001-77", codigo: "133" },
+    { nome: "O3MIDIA SOLUCOES DIGITAIS LTDA ME", cnpj: "13.221.310/0001-68", codigo: "132" },
+    { nome: "LETICIA DA SILVA SALMORIA", cnpj: "13.115.672/0001-42", codigo: "131" },
+    { nome: "DENIS DA SILVA ROCHA", cnpj: "13.025.328/0001-55", codigo: "130" },
+    { nome: "SUPERCORE TECNOLOGIA E INFORMATICA", cnpj: "12.928.382/0001-28", codigo: "129" },
+    { nome: "FACIL SERVICOS E COMERCIO LTDA", cnpj: "12.829.884/0001-06", codigo: "128" },
+    { nome: "JUSTA LTDA", cnpj: "12.728.338/0001-53", codigo: "127" },
+    { nome: "DIEGO SOARES BORGES - BASECOM SOLUC", cnpj: "12.622.488/0001-50", codigo: "126" },
+    { nome: "RICARDO DE ALMEIDA", cnpj: "12.535.509/0001-08", codigo: "125" },
+    { nome: "RAISE SISTEMAS", cnpj: "12.414.984/0001-87", codigo: "124" },
+    { nome: "AGENCIA ABA PUBLICIDADE, MARKETING", cnpj: "12.310.789/0001-07", codigo: "123" },
+    { nome: "DONI E LAVOR PUBLICIDADE LTDA", cnpj: "12.221.914/0001-14", codigo: "122" },
+    { nome: "BORGES & BORGES", cnpj: "12.115.103/0001-37", codigo: "121" },
+    { nome: "CENTRO DE ENSINO INSTITUTO VENDAS LTDA", cnpj: "12.015.051/0001-93", codigo: "120" },
+    { nome: "LUZIMAR CARPINTER GUIMARAES - LUZ M", cnpj: "11.931.684/0001-57", codigo: "119" },
+    { nome: "PELT REPRESENTACOES COMERCIAL SERVI", cnpj: "11.814.531/0001-95", codigo: "118" },
+    { nome: "LEANCOMPLIANCE", cnpj: "11.633.120/0001-90", codigo: "116" },
+    { nome: "FISICA SOLUCOES", cnpj: "11.529.529/0001-67", codigo: "115" },
+    { nome: "MAIS VENDAS", cnpj: "11.428.130/0001-40", codigo: "114" },
+    { nome: "KARINA EVELLINE DE SOUSA SANTANA", cnpj: "11.318.539/0001-85", codigo: "113" },
+    { nome: "NOUS - CAMINHOS DO SABER", cnpj: "11.223.098/0001-05", codigo: "112" },
+    { nome: "TCM SOLUCOES INTEGRADAS TREINAMENTO", cnpj: "11.110.852/0001-45", codigo: "111" },
+    { nome: "RJ EMPREENDIMENTOS DIGITAIS LTDA", cnpj: "11.020.137/0001-98", codigo: "110" },
+    { nome: "JLCP TECNOLOGIA EIRELI", cnpj: "10.927.185/0001-84", codigo: "109" },
+    { nome: "SEASON SOLUCOES EM TECNOLOGIA DA IN", cnpj: "10.804.837/0001-84", codigo: "108" },
+    { nome: "MARCOS RIBEIRO MEIRA", cnpj: "10.724.097/0001-66", codigo: "107" },
+    { nome: "MASTER IMAGEM FOTO VIDEO E SOM LTDA", cnpj: "10.661.384/0001-14", codigo: "106" },
+    { nome: "EDUARDO CAMPOS PEREIRA", cnpj: "10.521.195/0001-22", codigo: "105" },
+    { nome: "LUHAL DESENVOLVIMENTO EMPRESARIAL", cnpj: "10.407.402/0001-67", codigo: "104" },
+    { nome: "CARLOS CEZAR INVERNIZZI JR", cnpj: "10.327.204/0001-70", codigo: "103" },
+    { nome: "BENJAMIN DE OLIVEIRA MACHADO JR ME", cnpj: "10.210.458/0001-10", codigo: "102" },
+    { nome: "MOOBI-SERVICOS DE INFORMATICA LTDA", cnpj: "10.111.908/0001-72", codigo: "101" },
+    { nome: "VTA TECNOLOGIA ACESSIVEL LTDA", cnpj: "10.020.260/0001-37", codigo: "100" },
+    { nome: "LAHAR DIGITAL LTDA - ME", cnpj: "01.021.998/0001-19", codigo: "10" }
+];
+
+const busca = document.getElementById("buscaParceiro");
+    const lista = document.getElementById("listaParceiros");
+    const hidden = document.getElementById("parceiroSelecionado");
+
+    // Lógica da Barra de Busca
+    busca.addEventListener("input", () => {
+        const termo = busca.value.toLowerCase().trim();
+        lista.innerHTML = "";
+
+        if (termo === "") {
+            lista.style.display = "none";
+            return;
+        }
+
+        const filtrados = parceiros.filter(p => p.nome.toLowerCase().includes(termo));
+
+        if (filtrados.length > 0) {
+            lista.style.display = "block";
+            filtrados.forEach(p => {
+                const div = document.createElement("div");
+                div.className = "parceiro";
+                div.textContent = `${p.nome} (Cód: ${p.codigo})`;
+                div.onclick = () => {
+                    busca.value = p.nome;
+                    hidden.value = p.nome; // Define o valor que será enviado
+                    lista.style.display = "none";
+                };
+                lista.appendChild(div);
+            });
+        }
+    });
+
+    // Envio direto para o Google Sheets
+    document.getElementById("leadForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("btnEnviar");
+        btn.disabled = true;
+        btn.textContent = "Enviando...";
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            await fetch(WEBHOOK_URL, {
+                method: "POST",
+                body: JSON.stringify(data),
+                headers: { "Content-Type": "application/json" },
+                mode: "no-cors" // Importante para o Google Apps Script
+            });
+
+            // Se chegou aqui, o navegador enviou (mesmo sem resposta por causa do no-cors)
+            document.getElementById("formContent").style.display = "none";
+            document.getElementById("msgSuccess").style.display = "block";
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao enviar. Verifique sua internet ou o link do script.");
+            btn.disabled = false;
+            btn.textContent = "Concluir solicitação";
+        }
+    });
+</script>
+
+</body>
+</html>
