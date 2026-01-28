@@ -1,37 +1,146 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Solicitar Teste | Plataforma EAD</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* Estilos de Centralização */
-        body { margin: 0; font-family: Inter, sans-serif; background: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { max-width: 1100px; width: 100%; margin: auto; padding: 40px 20px; display: flex; gap: 40px; align-items: center; }
-        
-        /* Estilo das Caixas */
-        .left { flex: 1; }
-        .left h1 { font-size: 42px; color: #4b0055; line-height: 1.1; }
-        .left h1 span { color: #c000ff; }
-        
-        .form-box { flex: 1; background: #f9f9f9; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b0055; }
-        input, select, button { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        
-        button { background: #8b1fa9; color: #fff; border: none; font-weight: 700; cursor: pointer; transition: background 0.3s; }
-        button:hover { background: #6a1682; }
+<meta charset="UTF-8">
+<title>Solicitar Teste | Plataforma EAD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-        /* Lista de Busca */
-        .lista-parceiros { max-height: 160px; overflow-y: auto; background: #fff; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; display: none; }
-        .parceiro { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
-        .parceiro:hover { background: #f4e8f7; }
+<style>
+body {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    background: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
 
-        .success { display: none; color: #27ae60; font-weight: 600; text-align: center; padding: 20px; border: 2px dashed #27ae60; border-radius: 8px; }
+.container {
+    max-width: 1100px;
+    width: 100%;
+    padding: 40px 20px;
+    display: flex;
+    gap: 40px;
+    align-items: center;
+}
 
-        @media (max-width: 850px) { .container { flex-direction: column; text-align: center; } }
-    </style>
+.left { flex: 1; }
+
+.left h1 {
+    font-size: 42px;
+    color: #4b0055;
+    line-height: 1.1;
+}
+
+.left h1 span { color: #c000ff; }
+
+.form-box {
+    flex: 1;
+    background: #f9f9f9;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #4b0055;
+}
+
+input, select, button {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+select {
+    background: #fff;
+    cursor: pointer;
+}
+
+button {
+    background: #8b1fa9;
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:hover { background: #6a1682; }
+
+/* LISTA PARCEIROS */
+.lista-parceiros {
+    max-height: 280px;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    position: absolute;
+    width: calc(100% - 80px);
+    z-index: 9999;
+    display: none;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.parceiro-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.parceiro-item:hover { background: #f4e8f7; }
+
+.parceiro-item b {
+    display: block;
+    color: #4b0055;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.parceiro-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.parceiro-info span {
+    font-size: 12px;
+    color: #666;
+}
+
+.parceiro-info strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.success {
+    display: none;
+    color: #27ae60;
+    font-weight: 600;
+    text-align: center;
+    padding: 20px;
+    border: 2px dashed #27ae60;
+    border-radius: 8px;
+}
+
+@media (max-width: 850px) {
+    .container { flex-direction: column; text-align: center; }
+    .lista-parceiros { width: 85%; }
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
@@ -43,39 +152,43 @@
     <div class="form-box">
         <div id="formContent">
             <h2>Solicitar Demonstração</h2>
+
             <form id="leadForm">
                 <label>Parceiro responsável</label>
-                <input type="text" id="buscaParceiro" placeholder="Digite o nome do parceiro..." autocomplete="off" required>
+                <input type="text" id="buscaParceiro" placeholder="Pesquisar por nome ou CNPJ..." autocomplete="off" required>
                 <div class="lista-parceiros" id="listaParceiros"></div>
-                <input type="hidden" name="parceiro" id="parceiroSelecionado">
+
+                <input type="hidden" name="parceiro" id="parceiroNome">
+                <input type="hidden" name="cnpj_parceiro" id="parceiroCNPJ">
+                <input type="hidden" name="codigo_parceiro" id="parceiroCodigo">
+
+                <!-- NOVA LINHA -->
+                <label>Tipo de solicitação</label>
+                <select name="tipo_solicitacao" required>
+                    <option value="">Selecione uma opção</option>
+                    <option value="Venda de Cursos">Venda de Cursos</option>
+                    <option value="Treinamento Interno">Treinamento Interno</option>
+                </select>
 
                 <label>Seus dados</label>
-                <input type="text" name="nome" placeholder="Nome completo" required>
-                <input type="email" name="email" placeholder="Email principal" required>
-                <input type="tel" name="telefone" placeholder="WhatsApp com DDD" required>
-                
-                <label>Perfil</label>
-                <select name="perfil">
-                    <option value="Infoprodutor">Infoprodutor</option>
-                    <option value="Empresa">Empresa</option>
-                </select>
+                <input type="text" name="nome" placeholder="Seu nome completo" required>
+                <input type="email" name="email" placeholder="Seu e-mail principal" required>
+                <input type="tel" name="telefone" placeholder="Seu WhatsApp com DDD" required>
 
                 <button type="submit" id="btnEnviar">Concluir solicitação</button>
             </form>
         </div>
 
         <div class="success" id="msgSuccess">
-            ✅ Dados enviados com sucesso!<br>Verifique sua planilha Google.
+            ✅ Solicitação enviada com sucesso!
         </div>
     </div>
 </div>
 
 <script>
-    // Link que você gerou no Google Apps Script
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzQ9ZDq0N2KaXC0MC36-QjySoAKAQeXYWQ_kc_ou8-q_4oE3gR3RggR0pwyX0KvFYEa/exec";
+const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzQ9ZDq0N2KaXC0MC36-QjySoAKAQeXYWQ_kc_ou8-q_4oE3gR3RggR0pwyX0KvFYEa/exec";
 
-    // A lista de parceiros agora está ativa e pronta para a busca
-    const parceiros = [
+const parceiros = [
     { nome: "G9 INTELIGENCIA DE NEGOCIOS LTDA", cnpj: "75.039.228/0001-04", codigo: "750" },
     { nome: "USINARIA EDUCACIONAL E CONSULTORIA", cnpj: "74.653.460/0001-93", codigo: "746" },
     { nome: "CRESCERE TREINAMENTOS LTDA", cnpj: "74.545.586/0001-20", codigo: "745" },
@@ -474,65 +587,69 @@
 ];
 
 const busca = document.getElementById("buscaParceiro");
-    const lista = document.getElementById("listaParceiros");
-    const hidden = document.getElementById("parceiroSelecionado");
+const lista = document.getElementById("listaParceiros");
+const inputNome = document.getElementById("parceiroNome");
+const inputCNPJ = document.getElementById("parceiroCNPJ");
+const inputCodigo = document.getElementById("parceiroCodigo");
 
-    // Lógica da Barra de Busca
-    busca.addEventListener("input", () => {
-        const termo = busca.value.toLowerCase().trim();
-        lista.innerHTML = "";
+busca.addEventListener("input", () => {
+    const termo = busca.value.toLowerCase().trim();
+    lista.innerHTML = "";
+    if (!termo) return lista.style.display = "none";
 
-        if (termo === "") {
+    const filtrados = parceiros.filter(p =>
+        p.nome.toLowerCase().includes(termo) || p.cnpj.includes(termo)
+    );
+
+    if (!filtrados.length) return lista.style.display = "none";
+
+    lista.style.display = "block";
+
+    filtrados.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "parceiro-item";
+        item.innerHTML = `
+            <b>${p.nome}</b>
+            <div class="parceiro-info">
+                <span>Código: <strong>${p.codigo}</strong></span>
+                <span>CNPJ: <strong>${p.cnpj}</strong></span>
+            </div>
+        `;
+        item.onclick = () => {
+            busca.value = p.nome;
+            inputNome.value = p.nome;
+            inputCNPJ.value = p.cnpj;
+            inputCodigo.value = p.codigo;
             lista.style.display = "none";
-            return;
-        }
-
-        const filtrados = parceiros.filter(p => p.nome.toLowerCase().includes(termo));
-
-        if (filtrados.length > 0) {
-            lista.style.display = "block";
-            filtrados.forEach(p => {
-                const div = document.createElement("div");
-                div.className = "parceiro";
-                div.textContent = `${p.nome} (Cód: ${p.codigo})`;
-                div.onclick = () => {
-                    busca.value = p.nome;
-                    hidden.value = p.nome; // Define o valor que será enviado
-                    lista.style.display = "none";
-                };
-                lista.appendChild(div);
-            });
-        }
+        };
+        lista.appendChild(item);
     });
+});
 
-    // Envio direto para o Google Sheets
-    document.getElementById("leadForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById("btnEnviar");
-        btn.disabled = true;
-        btn.textContent = "Enviando...";
+document.getElementById("leadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!inputNome.value) return alert("Selecione um parceiro da lista.");
 
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
+    const btn = document.getElementById("btnEnviar");
+    btn.disabled = true;
+    btn.textContent = "Gravando...";
 
-        try {
-            await fetch(WEBHOOK_URL, {
-                method: "POST",
-                body: JSON.stringify(data),
-                headers: { "Content-Type": "application/json" },
-                mode: "no-cors" // Importante para o Google Apps Script
-            });
+    const payload = Object.fromEntries(new FormData(e.target).entries());
 
-            // Se chegou aqui, o navegador enviou (mesmo sem resposta por causa do no-cors)
-            document.getElementById("formContent").style.display = "none";
-            document.getElementById("msgSuccess").style.display = "block";
-        } catch (error) {
-            console.error(error);
-            alert("Erro ao enviar. Verifique sua internet ou o link do script.");
-            btn.disabled = false;
-            btn.textContent = "Concluir solicitação";
-        }
-    });
+    try {
+        await fetch(WEBHOOK_URL, {
+            method: "POST",
+            body: JSON.stringify(payload),
+            mode: "no-cors"
+        });
+        document.getElementById("formContent").style.display = "none";
+        document.getElementById("msgSuccess").style.display = "block";
+    } catch {
+        alert("Erro ao enviar.");
+        btn.disabled = false;
+        btn.textContent = "Concluir solicitação";
+    }
+});
 </script>
 
 </body>
